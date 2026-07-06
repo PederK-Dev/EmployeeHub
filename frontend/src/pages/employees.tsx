@@ -1,12 +1,16 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Edit01, Plus, Trash01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
 import { NativeSelect } from "@/components/base/select/select-native";
-import { TableCard } from "@/components/application/table/table";
+import { ErrorBanner } from "@/components/banner";
+import { ConfirmModal } from "@/components/confirm-modal";
+import { DataTable, type Column } from "@/components/data-table";
 import { ModalShell } from "@/components/modal-shell";
+import { PageHeader } from "@/components/page-header";
 import { ApiError, departmentsApi, employeesApi, positionsApi } from "@/lib/api";
 import type { Department, Employee, Position } from "@/lib/types";
+import { useToast } from "@/providers/toast-provider";
 
 interface FormState {
     firstName: string;
@@ -27,10 +31,13 @@ const emptyForm: FormState = {
 };
 
 export const Employees = () => {
+    const toast = useToast();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [departments, setDepartments] = useState<Department[]>([]);
     const [positions, setPositions] = useState<Position[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [query, setQuery] = useState("");
 
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editing, setEditing] = useState<Employee | null>(null);
@@ -42,10 +49,14 @@ export const Employees = () => {
     const [isDeleting, setIsDeleting] = useState(false);
 
     const loadEmployees = async () => {
+        setIsLoading(true);
         try {
             setEmployees(await employeesApi.list());
+            setError(null);
         } catch {
             setError("Failed to load employees.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -58,6 +69,17 @@ export const Employees = () => {
             })
             .catch(() => setError("Failed to load reference data."));
     }, []);
+
+    const filtered = useMemo(() => {
+        const q = query.trim().toLowerCase();
+        if (!q) return employees;
+        return employees.filter((e) =>
+            [e.firstName, e.lastName, e.email, e.departmentName, e.positionTitle]
+                .join(" ")
+                .toLowerCase()
+                .includes(q),
+        );
+    }, [employees, query]);
 
     const setField = (key: keyof FormState, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
 
@@ -107,8 +129,10 @@ export const Employees = () => {
         try {
             if (editing) {
                 await employeesApi.update(editing.id, dto);
+                toast.success("Employee updated.");
             } else {
                 await employeesApi.create(dto);
+                toast.success("Employee created.");
             }
             setIsFormOpen(false);
             await loadEmployees();
@@ -122,13 +146,13 @@ export const Employees = () => {
     const confirmDelete = async () => {
         if (!deleteTarget) return;
         setIsDeleting(true);
-        setError(null);
         try {
             await employeesApi.remove(deleteTarget.id);
+            toast.success("Employee deleted.");
             setDeleteTarget(null);
             await loadEmployees();
         } catch (err) {
-            setError(err instanceof ApiError ? err.message : "Failed to delete employee.");
+            toast.error(err instanceof ApiError ? err.message : "Failed to delete employee.");
             setDeleteTarget(null);
         } finally {
             setIsDeleting(false);
@@ -138,99 +162,64 @@ export const Employees = () => {
     const departmentOptions = departments.map((d) => ({ label: d.name, value: String(d.id) }));
     const positionOptions = positions.map((p) => ({ label: p.title, value: String(p.id) }));
 
+    const columns: Column<Employee>[] = [
+        {
+            header: "Name",
+            render: (e) => `${e.firstName} ${e.lastName}`,
+            cellClassName: "font-medium text-primary",
+        },
+        { header: "Email", render: (e) => e.email },
+        { header: "Department", render: (e) => e.departmentName },
+        { header: "Position", render: (e) => e.positionTitle },
+        {
+            header: "Actions",
+            align: "right",
+            render: (e) => (
+                <div className="flex justify-end gap-1">
+                    <Button size="sm" color="tertiary" iconLeading={Edit01} onClick={() => openEdit(e)}>
+                        Edit
+                    </Button>
+                    <Button size="sm" color="tertiary-destructive" iconLeading={Trash01} onClick={() => setDeleteTarget(e)}>
+                        Delete
+                    </Button>
+                </div>
+            ),
+        },
+    ];
+
     return (
         <div className="flex flex-col gap-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-semibold text-primary">Employees</h1>
-                    <p className="mt-1 text-sm text-tertiary">Manage the people in your organization.</p>
-                </div>
-                <Button iconLeading={Plus} onClick={openCreate}>
-                    Add employee
-                </Button>
-            </div>
+            <PageHeader
+                title="Employees"
+                subtitle="Manage the people in your organization."
+                action={
+                    <Button iconLeading={Plus} onClick={openCreate}>
+                        Add employee
+                    </Button>
+                }
+            />
 
-            {error && (
-                <div className="rounded-lg bg-error-primary px-3.5 py-2.5 text-sm text-error-primary ring-1 ring-error_subtle ring-inset">
-                    {error}
-                </div>
-            )}
+            {error && <ErrorBanner message={error} />}
 
-            <TableCard.Root>
-                <TableCard.Header title="All employees" badge={`${employees.length}`} />
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="border-b border-secondary bg-secondary">
-                            <tr className="text-xs font-semibold text-quaternary">
-                                <th className="px-6 py-3">Name</th>
-                                <th className="px-6 py-3">Email</th>
-                                <th className="px-6 py-3">Department</th>
-                                <th className="px-6 py-3">Position</th>
-                                <th className="px-6 py-3 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {employees.length === 0 ? (
-                                <tr>
-                                    <td className="px-6 py-8 text-center text-tertiary" colSpan={5}>
-                                        No employees yet.
-                                    </td>
-                                </tr>
-                            ) : (
-                                employees.map((e) => (
-                                    <tr key={e.id} className="border-b border-secondary last:border-0">
-                                        <td className="px-6 py-4 font-medium text-primary">
-                                            {e.firstName} {e.lastName}
-                                        </td>
-                                        <td className="px-6 py-4 text-tertiary">{e.email}</td>
-                                        <td className="px-6 py-4 text-tertiary">{e.departmentName}</td>
-                                        <td className="px-6 py-4 text-tertiary">{e.positionTitle}</td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex justify-end gap-1">
-                                                <Button size="sm" color="tertiary" iconLeading={Edit01} onClick={() => openEdit(e)}>
-                                                    Edit
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    color="tertiary-destructive"
-                                                    iconLeading={Trash01}
-                                                    onClick={() => setDeleteTarget(e)}
-                                                >
-                                                    Delete
-                                                </Button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </TableCard.Root>
+            <DataTable
+                title="All employees"
+                columns={columns}
+                rows={filtered}
+                getKey={(e) => e.id}
+                isLoading={isLoading}
+                emptyMessage={query ? "No employees match your search." : "No employees yet."}
+                search={{ value: query, onChange: setQuery, placeholder: "Search employees" }}
+            />
 
-            <ModalShell
-                isOpen={isFormOpen}
-                onOpenChange={setIsFormOpen}
-                title={editing ? "Edit employee" : "Add employee"}
-            >
+            <ModalShell isOpen={isFormOpen} onOpenChange={setIsFormOpen} title={editing ? "Edit employee" : "Add employee"}>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    {formError && (
-                        <div className="rounded-lg bg-error-primary px-3.5 py-2.5 text-sm text-error-primary ring-1 ring-error_subtle ring-inset">
-                            {formError}
-                        </div>
-                    )}
+                    {formError && <ErrorBanner message={formError} />}
                     <div className="grid grid-cols-2 gap-4">
                         <Input label="First name" value={form.firstName} onChange={(v) => setField("firstName", v)} isRequired />
                         <Input label="Last name" value={form.lastName} onChange={(v) => setField("lastName", v)} isRequired />
                     </div>
                     <Input label="Email" type="email" value={form.email} onChange={(v) => setField("email", v)} isRequired />
-                    <Input
-                        label="Hire date"
-                        type="date"
-                        value={form.hireDate}
-                        onChange={(v) => setField("hireDate", v)}
-                        isRequired
-                    />
+                    <Input label="Hire date" type="date" value={form.hireDate} onChange={(v) => setField("hireDate", v)} isRequired />
                     <NativeSelect
                         label="Department"
                         options={departmentOptions}
@@ -254,21 +243,14 @@ export const Employees = () => {
                 </form>
             </ModalShell>
 
-            <ModalShell
+            <ConfirmModal
                 isOpen={deleteTarget !== null}
-                onOpenChange={(open) => !open && setDeleteTarget(null)}
                 title="Delete employee"
                 description={`Are you sure you want to delete ${deleteTarget?.firstName} ${deleteTarget?.lastName}? This cannot be undone.`}
-            >
-                <div className="flex justify-end gap-3">
-                    <Button color="secondary" onClick={() => setDeleteTarget(null)} type="button">
-                        Cancel
-                    </Button>
-                    <Button color="primary-destructive" isLoading={isDeleting} onClick={confirmDelete}>
-                        Delete
-                    </Button>
-                </div>
-            </ModalShell>
+                isConfirming={isDeleting}
+                onConfirm={confirmDelete}
+                onClose={() => setDeleteTarget(null)}
+            />
         </div>
     );
 };

@@ -75,6 +75,8 @@ public class EmployeeHubDbContext : DbContext
             entity.Property(u => u.Role)
                 .HasConversion<string>()
                 .HasMaxLength(50);
+            entity.Property(u => u.EmailVerificationToken).HasMaxLength(128);
+            entity.Property(u => u.PasswordResetToken).HasMaxLength(128);
 
             entity.HasOne(u => u.Employee)
                 .WithOne()

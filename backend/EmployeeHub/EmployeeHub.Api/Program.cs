@@ -23,8 +23,10 @@ builder.Services.AddScoped<PositionService>();
 builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<LeaveRequestService>();
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddSingleton<TokenService>();
+builder.Services.AddSingleton<IEmailSender, LoggingEmailSender>();
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 
 // JWT authentication
@@ -44,7 +46,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("ManagerOrAdmin", policy => policy.RequireRole("Admin", "Manager"));
+});
 
 // CORS for the React dev client
 const string CorsPolicy = "Frontend";
@@ -58,9 +64,16 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-app.UseHttpsRedirection();
-
+// CORS must run before anything that can short-circuit the request (auth) so that
+// preflight OPTIONS requests always get the CORS headers.
 app.UseCors(CorsPolicy);
+
+// HTTPS redirection is skipped in Development: the SPA calls the API over HTTP, and a
+// redirect on a CORS preflight request is rejected by browsers.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();

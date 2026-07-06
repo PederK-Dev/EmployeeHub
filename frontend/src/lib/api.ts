@@ -2,8 +2,14 @@ import type {
     AuthResponse,
     CreateDepartment,
     CreateEmployee,
+    CreateLeaveRequest,
+    CreatePosition,
+    CreateUser,
+    DashboardStats,
     Department,
     Employee,
+    LeaveRequest,
+    LeaveStatus,
     Position,
     User,
 } from "./types";
@@ -90,6 +96,10 @@ export const departmentsApi = {
 
 export const positionsApi = {
     list: () => request<Position[]>("/positions"),
+    create: (dto: CreatePosition) => request<Position>("/positions", { method: "POST", body: dto }),
+    update: (id: number, dto: CreatePosition) =>
+        request<Position>(`/positions/${id}`, { method: "PUT", body: dto }),
+    remove: (id: number) => request<void>(`/positions/${id}`, { method: "DELETE" }),
 };
 
 export const employeesApi = {
@@ -98,4 +108,22 @@ export const employeesApi = {
     update: (id: number, dto: CreateEmployee) =>
         request<Employee>(`/employees/${id}`, { method: "PUT", body: dto }),
     remove: (id: number) => request<void>(`/employees/${id}`, { method: "DELETE" }),
+};
+
+export const leaveApi = {
+    list: () => request<LeaveRequest[]>("/leave-requests"),
+    create: (dto: CreateLeaveRequest) => request<LeaveRequest>("/leave-requests", { method: "POST", body: dto }),
+    updateStatus: (id: number, status: LeaveStatus) =>
+        request<LeaveRequest>(`/leave-requests/${id}/status`, { method: "PUT", body: { status } }),
+    remove: (id: number) => request<void>(`/leave-requests/${id}`, { method: "DELETE" }),
+};
+
+export const usersApi = {
+    list: () => request<User[]>("/users"),
+    create: (dto: CreateUser) => request<User>("/users", { method: "POST", body: dto }),
+    remove: (id: number) => request<void>(`/users/${id}`, { method: "DELETE" }),
+};
+
+export const dashboardApi = {
+    stats: () => request<DashboardStats>("/dashboard/stats"),
 };

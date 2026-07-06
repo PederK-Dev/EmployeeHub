@@ -1,18 +1,36 @@
-import { Building07, Home03, LogOut01, Users01 } from "@untitledui/icons";
+import type { FC } from "react";
+import { Briefcase01, Building07, Calendar, Home03, LogOut01, Moon01, Shield01, Sun, Users01 } from "@untitledui/icons";
 import { NavLink, Outlet } from "react-router";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Button } from "@/components/base/buttons/button";
 import { useAuth } from "@/providers/auth-provider";
+import { useTheme } from "@/providers/theme-provider";
 import { cx } from "@/utils/cx";
 
-const navItems = [
+interface NavItem {
+    to: string;
+    label: string;
+    icon: FC<{ className?: string }>;
+    end?: boolean;
+    adminOnly?: boolean;
+}
+
+const navItems: NavItem[] = [
     { to: "/", label: "Dashboard", icon: Home03, end: true },
-    { to: "/departments", label: "Departments", icon: Building07, end: false },
-    { to: "/employees", label: "Employees", icon: Users01, end: false },
+    { to: "/employees", label: "Employees", icon: Users01 },
+    { to: "/departments", label: "Departments", icon: Building07 },
+    { to: "/positions", label: "Positions", icon: Briefcase01 },
+    { to: "/leave", label: "Leave requests", icon: Calendar },
+    { to: "/users", label: "Users", icon: Shield01, adminOnly: true },
 ];
 
 export const AppLayout = () => {
     const { user, logout } = useAuth();
+    const { theme, setTheme } = useTheme();
+
+    const isAdmin = user?.role === "Admin";
+    const isDark = theme === "dark";
+    const visibleItems = navItems.filter((item) => !item.adminOnly || isAdmin);
 
     return (
         <div className="flex min-h-dvh bg-secondary">
@@ -25,7 +43,7 @@ export const AppLayout = () => {
                 </div>
 
                 <nav className="flex flex-1 flex-col gap-1">
-                    {navItems.map(({ to, label, icon: Icon, end }) => (
+                    {visibleItems.map(({ to, label, icon: Icon, end }) => (
                         <NavLink
                             key={to}
                             to={to}
@@ -53,9 +71,20 @@ export const AppLayout = () => {
                             <p className="truncate text-xs text-tertiary">{user?.role}</p>
                         </div>
                     </div>
-                    <Button size="sm" color="secondary" iconLeading={LogOut01} onClick={logout}>
-                        Sign out
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            size="sm"
+                            color="secondary"
+                            iconLeading={isDark ? Sun : Moon01}
+                            onClick={() => setTheme(isDark ? "light" : "dark")}
+                            className="flex-1"
+                        >
+                            {isDark ? "Light" : "Dark"}
+                        </Button>
+                        <Button size="sm" color="secondary" iconLeading={LogOut01} onClick={logout} className="flex-1">
+                            Sign out
+                        </Button>
+                    </div>
                 </div>
             </aside>
 

@@ -12,7 +12,7 @@ export const ModalShell = ({ isOpen, onOpenChange, title, description, children 
     return (
         <ModalOverlay isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
             <Modal>
-                <Dialog>
+                <Dialog aria-label={title}>
                     <div className="w-full max-w-lg rounded-2xl bg-primary p-6 shadow-xl ring-1 ring-secondary">
                         <div className="mb-5">
                             <h2 className="text-lg font-semibold text-primary">{title}</h2>

@@ -28,5 +28,7 @@ public class UserDto
 
     public UserRole Role { get; set; }
 
+    public bool EmailVerified { get; set; }
+
     public int? EmployeeId { get; set; }
 }

@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace EmployeeHub.Api.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(Policy = "AdminOnly")]
 [Route("api/users")]
 public class UsersController : ControllerBase
 {

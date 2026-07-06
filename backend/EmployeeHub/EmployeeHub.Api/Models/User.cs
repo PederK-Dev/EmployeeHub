@@ -10,6 +10,14 @@ public class User
 
     public UserRole Role { get; set; } = UserRole.Employee;
 
+    public bool EmailVerified { get; set; }
+
+    public string? EmailVerificationToken { get; set; }
+
+    public string? PasswordResetToken { get; set; }
+
+    public DateTime? PasswordResetTokenExpiresAt { get; set; }
+
     public int? EmployeeId { get; set; }
 
     public Employee? Employee { get; set; }

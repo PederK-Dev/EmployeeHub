@@ -60,8 +60,10 @@ public class LeaveRequestsController : ControllerBase
     }
 
     [HttpPut("{id:int}/status")]
+    [Authorize(Policy = "ManagerOrAdmin")]
     [ProducesResponseType(typeof(LeaveRequestDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateStatus(int id, UpdateLeaveRequestStatusDto dto)
     {
@@ -76,7 +78,9 @@ public class LeaveRequestsController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = "ManagerOrAdmin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteLeaveRequest(int id)
     {

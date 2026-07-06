@@ -8,34 +8,34 @@ import { ConfirmModal } from "@/components/confirm-modal";
 import { DataTable, type Column } from "@/components/data-table";
 import { ModalShell } from "@/components/modal-shell";
 import { PageHeader } from "@/components/page-header";
-import { ApiError, departmentsApi } from "@/lib/api";
-import type { Department } from "@/lib/types";
+import { ApiError, positionsApi } from "@/lib/api";
+import type { Position } from "@/lib/types";
 import { useToast } from "@/providers/toast-provider";
 
-export const Departments = () => {
+export const Positions = () => {
     const toast = useToast();
-    const [departments, setDepartments] = useState<Department[]>([]);
+    const [positions, setPositions] = useState<Position[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [query, setQuery] = useState("");
 
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [editing, setEditing] = useState<Department | null>(null);
-    const [name, setName] = useState("");
+    const [editing, setEditing] = useState<Position | null>(null);
+    const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [formError, setFormError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
 
-    const [deleteTarget, setDeleteTarget] = useState<Department | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<Position | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
     const load = async () => {
         setIsLoading(true);
         try {
-            setDepartments(await departmentsApi.list());
+            setPositions(await positionsApi.list());
             setError(null);
         } catch {
-            setError("Failed to load departments.");
+            setError("Failed to load positions.");
         } finally {
             setIsLoading(false);
         }
@@ -47,24 +47,24 @@ export const Departments = () => {
 
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();
-        if (!q) return departments;
-        return departments.filter(
-            (d) => d.name.toLowerCase().includes(q) || (d.description ?? "").toLowerCase().includes(q),
+        if (!q) return positions;
+        return positions.filter(
+            (p) => p.title.toLowerCase().includes(q) || (p.description ?? "").toLowerCase().includes(q),
         );
-    }, [departments, query]);
+    }, [positions, query]);
 
     const openCreate = () => {
         setEditing(null);
-        setName("");
+        setTitle("");
         setDescription("");
         setFormError(null);
         setIsFormOpen(true);
     };
 
-    const openEdit = (department: Department) => {
-        setEditing(department);
-        setName(department.name);
-        setDescription(department.description ?? "");
+    const openEdit = (position: Position) => {
+        setEditing(position);
+        setTitle(position.title);
+        setDescription(position.description ?? "");
         setFormError(null);
         setIsFormOpen(true);
     };
@@ -73,14 +73,14 @@ export const Departments = () => {
         event.preventDefault();
         setFormError(null);
         setIsSaving(true);
-        const dto = { name, description: description.trim() === "" ? null : description };
+        const dto = { title, description: description.trim() === "" ? null : description };
         try {
             if (editing) {
-                await departmentsApi.update(editing.id, dto);
-                toast.success("Department updated.");
+                await positionsApi.update(editing.id, dto);
+                toast.success("Position updated.");
             } else {
-                await departmentsApi.create(dto);
-                toast.success("Department created.");
+                await positionsApi.create(dto);
+                toast.success("Position created.");
             }
             setIsFormOpen(false);
             await load();
@@ -95,30 +95,30 @@ export const Departments = () => {
         if (!deleteTarget) return;
         setIsDeleting(true);
         try {
-            await departmentsApi.remove(deleteTarget.id);
-            toast.success("Department deleted.");
+            await positionsApi.remove(deleteTarget.id);
+            toast.success("Position deleted.");
             setDeleteTarget(null);
             await load();
         } catch (err) {
-            toast.error(err instanceof ApiError ? err.message : "Failed to delete department.");
+            toast.error(err instanceof ApiError ? err.message : "Failed to delete position.");
             setDeleteTarget(null);
         } finally {
             setIsDeleting(false);
         }
     };
 
-    const columns: Column<Department>[] = [
-        { header: "Name", render: (d) => d.name, cellClassName: "font-medium text-primary" },
-        { header: "Description", render: (d) => d.description ?? "—" },
+    const columns: Column<Position>[] = [
+        { header: "Title", render: (p) => p.title, cellClassName: "font-medium text-primary" },
+        { header: "Description", render: (p) => p.description ?? "—" },
         {
             header: "Actions",
             align: "right",
-            render: (d) => (
+            render: (p) => (
                 <div className="flex justify-end gap-1">
-                    <Button size="sm" color="tertiary" iconLeading={Edit01} onClick={() => openEdit(d)}>
+                    <Button size="sm" color="tertiary" iconLeading={Edit01} onClick={() => openEdit(p)}>
                         Edit
                     </Button>
-                    <Button size="sm" color="tertiary-destructive" iconLeading={Trash01} onClick={() => setDeleteTarget(d)}>
+                    <Button size="sm" color="tertiary-destructive" iconLeading={Trash01} onClick={() => setDeleteTarget(p)}>
                         Delete
                     </Button>
                 </div>
@@ -129,11 +129,11 @@ export const Departments = () => {
     return (
         <div className="flex flex-col gap-6">
             <PageHeader
-                title="Departments"
-                subtitle="Manage your organization's departments."
+                title="Positions"
+                subtitle="Manage the job titles used across your organization."
                 action={
                     <Button iconLeading={Plus} onClick={openCreate}>
-                        Add department
+                        Add position
                     </Button>
                 }
             />
@@ -141,35 +141,31 @@ export const Departments = () => {
             {error && <ErrorBanner message={error} />}
 
             <DataTable
-                title="All departments"
+                title="All positions"
                 columns={columns}
                 rows={filtered}
-                getKey={(d) => d.id}
+                getKey={(p) => p.id}
                 isLoading={isLoading}
-                emptyMessage={query ? "No departments match your search." : "No departments yet."}
-                search={{ value: query, onChange: setQuery, placeholder: "Search departments" }}
+                emptyMessage={query ? "No positions match your search." : "No positions yet."}
+                search={{ value: query, onChange: setQuery, placeholder: "Search positions" }}
             />
 
-            <ModalShell
-                isOpen={isFormOpen}
-                onOpenChange={setIsFormOpen}
-                title={editing ? "Edit department" : "Add department"}
-            >
+            <ModalShell isOpen={isFormOpen} onOpenChange={setIsFormOpen} title={editing ? "Edit position" : "Add position"}>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     {formError && <ErrorBanner message={formError} />}
-                    <Input label="Name" value={name} onChange={setName} placeholder="Engineering" isRequired />
+                    <Input label="Title" value={title} onChange={setTitle} placeholder="Software Engineer" isRequired />
                     <TextArea
                         label="Description"
                         value={description}
                         onChange={setDescription}
-                        placeholder="What does this department do?"
+                        placeholder="What does this role involve?"
                     />
                     <div className="mt-2 flex justify-end gap-3">
                         <Button color="secondary" onClick={() => setIsFormOpen(false)} type="button">
                             Cancel
                         </Button>
                         <Button type="submit" isLoading={isSaving}>
-                            {editing ? "Save changes" : "Create department"}
+                            {editing ? "Save changes" : "Create position"}
                         </Button>
                     </div>
                 </form>
@@ -177,8 +173,8 @@ export const Departments = () => {
 
             <ConfirmModal
                 isOpen={deleteTarget !== null}
-                title="Delete department"
-                description={`Are you sure you want to delete "${deleteTarget?.name}"? This cannot be undone.`}
+                title="Delete position"
+                description={`Are you sure you want to delete "${deleteTarget?.title}"? This cannot be undone.`}
                 isConfirming={isDeleting}
                 onConfirm={confirmDelete}
                 onClose={() => setDeleteTarget(null)}

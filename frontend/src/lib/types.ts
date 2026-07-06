@@ -50,3 +50,51 @@ export interface CreateEmployee {
     departmentId: number;
     positionId: number;
 }
+
+export interface CreatePosition {
+    title: string;
+    description?: string | null;
+}
+
+export type LeaveType = "Annual" | "Sick" | "Unpaid" | "Parental" | "Bereavement";
+export type LeaveStatus = "Pending" | "Approved" | "Rejected" | "Cancelled";
+
+export const LEAVE_TYPES: LeaveType[] = ["Annual", "Sick", "Unpaid", "Parental", "Bereavement"];
+export const LEAVE_STATUSES: LeaveStatus[] = ["Pending", "Approved", "Rejected", "Cancelled"];
+export const USER_ROLES: UserRole[] = ["Employee", "Manager", "Admin"];
+
+export interface LeaveRequest {
+    id: number;
+    employeeId: number;
+    employeeName: string;
+    type: LeaveType;
+    status: LeaveStatus;
+    startDate: string;
+    endDate: string;
+    reason: string | null;
+    requestedAt: string;
+}
+
+export interface CreateLeaveRequest {
+    employeeId: number;
+    type: LeaveType;
+    startDate: string;
+    endDate: string;
+    reason?: string | null;
+}
+
+export interface CreateUser {
+    email: string;
+    password: string;
+    role: UserRole;
+    employeeId?: number | null;
+}
+
+export interface DashboardStats {
+    departmentCount: number;
+    employeeCount: number;
+    positionCount: number;
+    pendingLeaveCount: number;
+    leaveByStatus: Record<string, number>;
+    recentEmployees: Employee[];
+}

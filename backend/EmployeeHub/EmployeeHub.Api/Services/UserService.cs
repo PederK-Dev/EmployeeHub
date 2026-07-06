@@ -25,6 +25,7 @@ public class UserService
                 Id = u.Id,
                 Email = u.Email,
                 Role = u.Role,
+                EmailVerified = u.EmailVerified,
                 EmployeeId = u.EmployeeId
             })
             .ToListAsync();
@@ -61,6 +62,8 @@ public class UserService
         {
             Email = dto.Email,
             Role = dto.Role,
+            // Admin-created accounts are trusted, so they skip email verification.
+            EmailVerified = true,
             EmployeeId = dto.EmployeeId
         };
         user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
@@ -92,6 +95,7 @@ public class UserService
             Id = user.Id,
             Email = user.Email,
             Role = user.Role,
+            EmailVerified = user.EmailVerified,
             EmployeeId = user.EmployeeId
         };
     }

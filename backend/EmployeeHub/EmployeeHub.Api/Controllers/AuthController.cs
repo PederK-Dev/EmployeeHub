@@ -34,6 +34,65 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("register")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Register(RegisterDto dto)
+    {
+        var result = await _authService.RegisterAsync(dto);
+
+        if (result.Status == ResultStatus.Invalid)
+        {
+            return BadRequest(new { error = result.Error });
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordDto dto)
+    {
+        await _authService.RequestPasswordResetAsync(dto);
+
+        // Always OK so callers cannot probe which emails are registered.
+        return Ok(new { message = "If that email is registered, a reset link has been sent." });
+    }
+
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResetPassword(ResetPasswordDto dto)
+    {
+        var result = await _authService.ResetPasswordAsync(dto);
+
+        if (result.Status == ResultStatus.Invalid)
+        {
+            return BadRequest(new { error = result.Error });
+        }
+
+        return Ok(new { message = "Your password has been reset. You can now sign in." });
+    }
+
+    [HttpPost("verify-email")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> VerifyEmail(VerifyEmailDto dto)
+    {
+        var result = await _authService.VerifyEmailAsync(dto);
+
+        if (result.Status == ResultStatus.Invalid)
+        {
+            return BadRequest(new { error = result.Error });
+        }
+
+        return Ok(new { message = "Your email has been verified." });
+    }
+
     [HttpGet("me")]
     [Authorize]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]

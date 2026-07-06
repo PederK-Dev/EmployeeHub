@@ -1,39 +1,56 @@
 # EmployeeHub
 
-A full-stack employee management application: an ASP.NET Core Web API backed by SQL Server and Entity Framework Core, with a React single-page frontend built on Untitled UI.
+A full-stack employee management application — an ASP.NET Core Web API backed by SQL Server and Entity Framework Core, with a React single-page frontend built on Untitled UI. Built as a portfolio project to demonstrate a realistic, secured, end-to-end CRUD application.
 
 ## Features
 
-- **JWT authentication** — sign in, bearer-token protected API, auto-logout on expiry
-- **Dashboard** — organization overview (department, employee, and position counts + recent hires)
-- **Department management** — full CRUD
-- **Employee management** — full CRUD with department/position assignment
-- Backing domain models for **Positions**, **Leave requests**, and **Users**
+- **JWT authentication** — login, bearer-token protected API, auto-logout on expiry, seeded admin user
+- **Role-based authorization** — `Admin` / `Manager` / `Employee` roles enforced on the API and reflected in the UI
+- **Dashboard** — live counts (employees, departments, positions), pending-leave count, leave-status breakdown, and recent hires
+- **Departments** — full CRUD with validation and an in-use delete guard
+- **Positions** — full CRUD
+- **Employees** — full CRUD with department & position assignment
+- **Leave requests** — submit, approve/reject (manager+), delete, with status badges
+- **Users** — admin-only account management with optional employee linking
+- **UX polish** — toast notifications, table search, loading & empty states, delete confirmations, and a light/dark theme toggle
 
 ## Tech stack
 
-| Layer     | Technology                                                              |
-| --------- | ----------------------------------------------------------------------- |
-| Backend   | ASP.NET Core (.NET 10), Entity Framework Core, SQL Server               |
-| Auth      | JWT bearer tokens, ASP.NET Core `PasswordHasher`                        |
-| Frontend  | React 19 + TypeScript, Vite, React Router, Untitled UI (Tailwind CSS v4)|
+| Layer     | Technology                                                                 |
+| --------- | -------------------------------------------------------------------------- |
+| Backend   | ASP.NET Core (.NET 10), Entity Framework Core, SQL Server                  |
+| Auth      | JWT bearer tokens, role-based policies, ASP.NET Core `PasswordHasher`      |
+| Frontend  | React 19 + TypeScript, Vite, React Router, Untitled UI (Tailwind CSS v4)   |
+
+## Screenshots
+
+> Screenshots live in [`docs/screenshots/`](docs/screenshots/). Capture the running app and drop the
+> PNGs in with these names to populate this section.
+
+| Login | Dashboard |
+| ----- | --------- |
+| ![Login page](docs/screenshots/login.png) | ![Dashboard](docs/screenshots/dashboard.png) |
+
+| Employees | Leave requests |
+| --------- | -------------- |
+| ![Employees](docs/screenshots/employees.png) | ![Leave requests](docs/screenshots/leave-requests.png) |
 
 ## Repository layout
 
 ```text
 EmployeeHub/
 ├── backend/EmployeeHub/EmployeeHub.Api/   # ASP.NET Core Web API
-│   ├── Controllers/                        # Auth, Departments, Employees, Positions, LeaveRequests, Users, Health
+│   ├── Controllers/                        # Auth, Dashboard, Departments, Employees, Positions, LeaveRequests, Users, Health
 │   ├── Services/                           # Business logic (one service per aggregate)
 │   ├── Models/                             # EF entities + enums
 │   ├── DTOs/                               # Request/response contracts
 │   ├── Data/                               # DbContext, migrations, seeder
-│   └── Program.cs                          # DI, auth, CORS, pipeline
+│   └── Program.cs                          # DI, auth, authorization policies, CORS, pipeline
 └── frontend/                               # React SPA (Vite + Untitled UI)
     └── src/
-        ├── pages/                          # login, dashboard, departments, employees
-        ├── components/                     # layout, protected route, modal shell
-        ├── providers/                      # auth context, theme, router
+        ├── pages/                          # login, dashboard, departments, positions, employees, leave-requests, users
+        ├── components/                     # layout, guards, data-table, modal shell, toasts
+        ├── providers/                      # auth, theme, toast, router
         └── lib/                            # API client + types
 ```
 
@@ -78,23 +95,26 @@ Open the printed URL — **<http://localhost:5173>** — and sign in with the se
 
 ## API overview
 
-All endpoints are under `/api`. Every route except `POST /auth/login` and `/health` requires a
-`Authorization: Bearer <token>` header.
+All endpoints are under `/api`. Every route except `POST /auth/login` and `/health` requires an
+`Authorization: Bearer <token>` header. Some routes require a specific role (below).
 
-| Method                | Route                          | Description                              |
-| --------------------- | ------------------------------ | ---------------------------------------- |
-| `POST`                | `/auth/login`                  | Authenticate, returns a JWT + user       |
-| `GET`                 | `/auth/me`                     | Current user from the token              |
-| `GET/POST`            | `/departments`                 | List / create departments                |
-| `GET/PUT/DELETE`      | `/departments/{id}`            | Read / update / delete a department      |
-| `GET/POST`            | `/employees`                   | List / create employees                  |
-| `GET/PUT/DELETE`      | `/employees/{id}`              | Read / update / delete an employee       |
-| `GET/POST`            | `/positions`                   | List / create positions                  |
-| `GET/PUT/DELETE`      | `/positions/{id}`              | Read / update / delete a position        |
-| `GET/POST`            | `/leave-requests`              | List / create leave requests             |
-| `PUT`                 | `/leave-requests/{id}/status`  | Approve / reject a leave request         |
-| `GET/POST`            | `/users`                       | List / create users                      |
-| `GET`                 | `/health`                      | Health check (open)                      |
+| Method             | Route                          | Access          | Description                          |
+| ------------------ | ------------------------------ | --------------- | ------------------------------------ |
+| `POST`             | `/auth/login`                  | Anonymous       | Authenticate, returns a JWT + user   |
+| `GET`              | `/auth/me`                     | Authenticated   | Current user from the token          |
+| `GET`              | `/dashboard/stats`             | Authenticated   | Aggregated dashboard metrics         |
+| `GET/POST`         | `/departments`                 | Authenticated   | List / create departments            |
+| `GET/PUT/DELETE`   | `/departments/{id}`            | Authenticated   | Read / update / delete a department  |
+| `GET/POST`         | `/positions`                   | Authenticated   | List / create positions              |
+| `GET/PUT/DELETE`   | `/positions/{id}`              | Authenticated   | Read / update / delete a position    |
+| `GET/POST`         | `/employees`                   | Authenticated   | List / create employees              |
+| `GET/PUT/DELETE`   | `/employees/{id}`              | Authenticated   | Read / update / delete an employee   |
+| `GET/POST`         | `/leave-requests`              | Authenticated   | List / submit leave requests         |
+| `PUT`              | `/leave-requests/{id}/status`  | Manager / Admin | Approve or reject a request          |
+| `DELETE`           | `/leave-requests/{id}`         | Manager / Admin | Delete a leave request               |
+| `GET/POST`         | `/users`                       | Admin           | List / create user accounts          |
+| `DELETE`           | `/users/{id}`                  | Admin           | Delete a user account                |
+| `GET`              | `/health`                      | Anonymous       | Health check                         |
 
 ## Database migrations
 
@@ -114,5 +134,27 @@ Backend settings live in `backend/EmployeeHub/EmployeeHub.Api/appsettings.json`:
 - `Cors:AllowedOrigins` — allowed frontend origins
 - `Seed` — admin credentials created on first run
 
-> **Note:** the JWT key and seed password in `appsettings.json` are for local development only. Move
-> them to user-secrets or environment variables before deploying anywhere real.
+> **Security note:** the JWT key and seed password in `appsettings.json` are for local development
+> only. Move them to user-secrets or environment variables before deploying anywhere real.
+
+## What I learned
+
+- **Layered API design** — keeping controllers thin and pushing logic into per-aggregate services, with DTOs as the boundary so EF entities never leak to clients.
+- **Auth vs. authorization** — issuing and validating JWTs is only half the job; without role-based policies (`[Authorize(Policy = ...)]`) any authenticated user could escalate privileges. Adding authentication *and* authorization, and verifying enforcement with different-role tokens, was a key lesson.
+- **EF Core relationships & translation** — modeling FKs with the right delete behavior (`Restrict` / `Cascade` / `SetNull`), unique indexes, and storing enums as strings; plus the gotcha that a projection must be an inline `Select` (or a `static Expression`) or EF can't translate it to SQL.
+- **CORS & the dev HTTPS pipeline** — debugging a real cross-origin failure where HTTPS redirection was 307-redirecting the browser's preflight `OPTIONS`, which browsers reject.
+- **React SPA fundamentals** — auth context, protected/role-guarded routes, a typed `fetch` client with token attachment and auto-logout on 401, and reusable UI (a generic data table, modal shell, toast system).
+- **Building on a design system** — composing screens from an existing component library (Untitled UI / React Aria) and its theming, accessibility, and conventions.
+
+## Roadmap
+
+Planned enhancements beyond the current MVP:
+
+- **Auth:** self-service registration, forgot-password flow, and email verification
+- **Dashboard:** richer charts (headcount over time, per-department breakdowns) and report export (CSV/PDF)
+- **Employees:** dedicated detail pages and pagination/filtering for large datasets
+- **Platform:** refresh tokens, audit logging, and containerized deployment (Docker) with CI
+
+## License
+
+This project is for portfolio/demonstration purposes.
