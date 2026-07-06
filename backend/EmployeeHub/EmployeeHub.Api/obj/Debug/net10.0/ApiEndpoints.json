@@ -1,8 +1,34 @@
 [
   {
+    "ContainingType": "EmployeeHub.Api.Controllers.DepartmentsController",
+    "Method": "GetDepartments",
+    "RelativePath": "api/departments",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EmployeeHub.Api.Controllers.DepartmentsController",
+    "Method": "CreateDepartment",
+    "RelativePath": "api/departments",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "EmployeeHub.Api.DTOs.CreateDepartmentDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "EmployeeHub.Api.Controllers.HealthController",
     "Method": "GetHealth",
-    "RelativePath": "api/Health",
+    "RelativePath": "api/health",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
