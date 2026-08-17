@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { AdminRoute } from "@/components/admin-route";
 import { AppLayout } from "@/components/app-layout";
+import { ManagerRoute } from "@/components/manager-route";
 import { ProtectedRoute } from "@/components/protected-route";
 import { Dashboard } from "@/pages/dashboard";
 import { Departments } from "@/pages/departments";
@@ -30,10 +31,12 @@ createRoot(document.getElementById("root")!).render(
                                 <Route element={<ProtectedRoute />}>
                                     <Route element={<AppLayout />}>
                                         <Route path="/" element={<Dashboard />} />
-                                        <Route path="/employees" element={<Employees />} />
                                         <Route path="/departments" element={<Departments />} />
                                         <Route path="/positions" element={<Positions />} />
                                         <Route path="/leave" element={<LeaveRequests />} />
+                                        <Route element={<ManagerRoute />}>
+                                            <Route path="/employees" element={<Employees />} />
+                                        </Route>
                                         <Route element={<AdminRoute />}>
                                             <Route path="/users" element={<Users />} />
                                         </Route>

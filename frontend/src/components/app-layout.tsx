@@ -13,11 +13,12 @@ interface NavItem {
     icon: FC<{ className?: string }>;
     end?: boolean;
     adminOnly?: boolean;
+    managerOnly?: boolean;
 }
 
 const navItems: NavItem[] = [
     { to: "/", label: "Dashboard", icon: Home03, end: true },
-    { to: "/employees", label: "Employees", icon: Users01 },
+    { to: "/employees", label: "Employees", icon: Users01, managerOnly: true },
     { to: "/departments", label: "Departments", icon: Building07 },
     { to: "/positions", label: "Positions", icon: Briefcase01 },
     { to: "/leave", label: "Leave requests", icon: Calendar },
@@ -29,8 +30,9 @@ export const AppLayout = () => {
     const { theme, setTheme } = useTheme();
 
     const isAdmin = user?.role === "Admin";
+    const isManager = isAdmin || user?.role === "Manager";
     const isDark = theme === "dark";
-    const visibleItems = navItems.filter((item) => !item.adminOnly || isAdmin);
+    const visibleItems = navItems.filter((item) => (!item.adminOnly || isAdmin) && (!item.managerOnly || isManager));
 
     return (
         <div className="flex min-h-dvh bg-secondary">

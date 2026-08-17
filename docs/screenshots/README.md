@@ -1,14 +1,14 @@
 # Screenshots
 
-Drop PNG screenshots of the running app here to populate the Screenshots section of the root
-[`README.md`](../../README.md). Expected filenames:
+Screenshots of the running app, embedded in the Screenshots section of the root
+[`README.md`](../../README.md). Filenames must match what the README references:
 
-| File                  | What to capture                                          |
+| File                  | What it shows                                            |
 | --------------------- | -------------------------------------------------------- |
-| `login.png`           | The login page                                           |
-| `dashboard.png`       | The dashboard with stat cards and recent hires           |
-| `employees.png`       | The employees list (bonus: the add/edit modal open)      |
-| `leave-requests.png`  | The leave requests page with status badges               |
+| `login.jpg`           | The login page                                           |
+| `dashboard.jpg`       | The dashboard with stat cards and recent hires           |
+| `employees.jpg`       | The employees list (bonus: the add/edit modal open)      |
+| `leave-requests.jpg`  | The leave requests page with status badges               |
 
 Tips:
 - Sign in as the seeded admin (`admin@employeehub.local` / `Admin123!`) so all sections are visible.

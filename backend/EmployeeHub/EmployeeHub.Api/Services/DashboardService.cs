@@ -15,26 +15,34 @@ public class DashboardService
         _context = context;
     }
 
-    public async Task<DashboardStatsDto> GetStatsAsync()
+    /// <param name="includeStaffDetail">
+    /// When false, the named-employee sections are left empty. Headline counts are harmless, but
+    /// the recent-hire list and per-department breakdown are directory data and stay manager-only.
+    /// </param>
+    public async Task<DashboardStatsDto> GetStatsAsync(bool includeStaffDetail)
     {
         var leaveByStatus = await _context.LeaveRequests
             .GroupBy(l => l.Status)
             .Select(g => new { Status = g.Key, Count = g.Count() })
             .ToListAsync();
 
-        var employeesByDepartment = await _context.Departments
-            .Select(d => new DepartmentHeadcountDto
-            {
-                Department = d.Name,
-                Count = _context.Employees.Count(e => e.DepartmentId == d.Id)
-            })
-            .ToListAsync();
+        var employeesByDepartment = includeStaffDetail
+            ? await _context.Departments
+                .Select(d => new DepartmentHeadcountDto
+                {
+                    Department = d.Name,
+                    Count = _context.Employees.Count(e => e.DepartmentId == d.Id)
+                })
+                .ToListAsync()
+            : [];
 
-        var recentEmployees = await _context.Employees
-            .OrderByDescending(e => e.Id)
-            .Take(5)
-            .Select(Project)
-            .ToListAsync();
+        var recentEmployees = includeStaffDetail
+            ? await _context.Employees
+                .OrderByDescending(e => e.Id)
+                .Take(5)
+                .Select(Project)
+                .ToListAsync()
+            : [];
 
         return new DashboardStatsDto
         {

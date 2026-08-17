@@ -1,5 +1,5 @@
-using System.Security.Claims;
 using EmployeeHub.Api.DTOs;
+using EmployeeHub.Api.Extensions;
 using EmployeeHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,17 +26,20 @@ public class AuthController : ControllerBase
     {
         var result = await _authService.LoginAsync(dto);
 
-        if (result is null)
+        return result.Status switch
         {
-            return Unauthorized(new { error = "Invalid email or password." });
-        }
-
-        return Ok(result);
+            LoginStatus.InvalidCredentials => Unauthorized(new { error = "Invalid email or password." }),
+            LoginStatus.EmailNotVerified => Unauthorized(new
+            {
+                error = "Please confirm your email address before signing in."
+            }),
+            _ => Ok(result.Value)
+        };
     }
 
     [HttpPost("register")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register(RegisterDto dto)
     {
@@ -47,7 +50,8 @@ public class AuthController : ControllerBase
             return BadRequest(new { error = result.Error });
         }
 
-        return Ok(result.Value);
+        // No token here on purpose: the account has to be verified before it can sign in.
+        return Ok(new { message = "Account created. Check your email for a confirmation link." });
     }
 
     [HttpPost("forgot-password")]
@@ -99,15 +103,14 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Me()
     {
-        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                      ?? User.FindFirstValue("sub");
+        var userId = User.GetUserId();
 
-        if (!int.TryParse(subject, out var userId))
+        if (userId is null)
         {
             return Unauthorized();
         }
 
-        var user = await _authService.GetUserByIdAsync(userId);
+        var user = await _authService.GetUserByIdAsync(userId.Value);
 
         if (user is null)
         {

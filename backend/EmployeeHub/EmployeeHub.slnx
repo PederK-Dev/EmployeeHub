@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="EmployeeHub.Api/EmployeeHub.Api.csproj" />
+  <Project Path="EmployeeHub.Api.Tests/EmployeeHub.Api.Tests.csproj" />
 </Solution>

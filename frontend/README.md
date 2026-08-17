@@ -1,56 +1,46 @@
-# Untitled UI starter kit for Vite
+# EmployeeHub — frontend
 
-This is an official Untitled UI starter kit for Vite. Kickstart your Untitled UI project with Vite in seconds.
+The React single-page client for EmployeeHub. See the [root README](../README.md) for the full
+project overview, feature list, and API documentation.
 
-## Untitled UI React
+## Running locally
 
-[Untitled UI React](https://www.untitledui.com/react) is the world’s largest collection of open-source React UI components. Everything you need to design and develop modern, beautiful interfaces—fast.
-
-Built with React 19.1, Tailwind CSS v4.1, TypeScript 5.8, and React Aria, Untitled UI React components deliver modern performance, type safety, and maintainability.
-
-[Learn more](https://www.untitledui.com/react) • [Documentation](https://www.untitledui.com/react/docs/introduction) • [Figma](https://www.untitledui.com/figma) • [FAQs](https://www.untitledui.com/faqs)
-
-## Getting started
-
-First, run the development server:
+The client needs the API running as well — start it first (see the root README), then:
 
 ```bash
+cp .env.example .env   # first time only
+npm install            # first time only
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) with your browser to see the result.
+The app is served at <http://localhost:5173> and signs in against the API address configured in
+`.env` (`VITE_API_URL`).
 
-You can start editing the app by modifying the components in `src/` folder. The page auto-updates as you edit the file.
+## Scripts
 
-## Resources
+| Script            | Description                                       |
+| ----------------- | ------------------------------------------------- |
+| `npm run dev`     | Start the Vite dev server with hot reload         |
+| `npm run build`   | Type-check (`tsc -b`) and build for production    |
+| `npm run preview` | Serve the production build locally                |
 
-Untitled UI React is built on top of [Untitled UI Figma](https://www.untitledui.com/figma), the world's largest and most popular Figma UI kit and design system. Explore more:
+## Layout
 
-**[Untitled UI Figma:](https://www.untitledui.com/react/resources/figma-files)** The world's largest Figma UI kit and design system.
-<br/>
-**[Untitled UI Icons:](https://www.untitledui.com/react/resources/icons)** A clean, consistent, and neutral icon library crafted specifically for modern UI design.
-<br/>
-**[Untitled UI file icons:](https://www.untitledui.com/react/resources/file-icons)** Free file format icons, designed specifically for modern web and UI design.
-<br/>
-**[Untitled UI flag icons:](https://www.untitledui.com/react/resources/flag-icons)** Free country flag icons, designed specifically for modern web and UI design.
-<br/>
-**[Untitled UI avatars:](https://www.untitledui.com/react/resources/avatars)** Free placeholder user avatars and profile pictures to use in your projects.
-<br/>
-**[Untitled UI logos:](https://www.untitledui.com/react/resources/logos)** Free fictional company logos to use in your projects.
+```text
+src/
+├── pages/        # Route components (login, dashboard, employees, ...)
+├── components/   # App components + the Untitled UI component library
+├── providers/    # Auth, theme, toast, and router context
+├── lib/          # Typed API client and shared types
+├── hooks/        # Custom hooks
+├── styles/       # Global styles and theme tokens
+└── utils/        # Helpers (cx, etc.)
+```
 
-## License
+## Built on Untitled UI
 
-Untitled UI React open-source components are licensed under the MIT license, which means you can use them for free in unlimited commercial projects.
-
-> [!NOTE]
-> This license applies only to the starter kit and to the components included in this open-source repository. [Untitled UI React PRO](https://www.untitledui.com/react) includes hundreds more advanced UI components and page examples and is subject to a separate [license agreement](https://www.untitledui.com/license).
-
-[Untitled UI license agreement →](https://www.untitledui.com/license)
-
-[Frequently asked questions →](https://www.untitledui.com/faqs)
+The UI is composed from [Untitled UI React](https://www.untitledui.com/react), scaffolded from the
+official Vite starter kit. Its open-source components are MIT licensed. Icons come from the
+`@untitledui/icons` package and are used under
+[Untitled UI's license](https://www.untitledui.com/license) — they may be used in this project but
+not extracted or redistributed as an icon library.

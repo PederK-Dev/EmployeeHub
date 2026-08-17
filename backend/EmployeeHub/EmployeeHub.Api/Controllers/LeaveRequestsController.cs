@@ -1,4 +1,5 @@
 using EmployeeHub.Api.DTOs;
+using EmployeeHub.Api.Extensions;
 using EmployeeHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +22,13 @@ public class LeaveRequestsController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<LeaveRequestDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLeaveRequests()
     {
-        var leaveRequests = await _leaveRequestService.GetAllLeaveRequestsAsync();
+        var viewer = CurrentViewer();
+        if (viewer is null)
+        {
+            return Unauthorized();
+        }
+
+        var leaveRequests = await _leaveRequestService.GetLeaveRequestsAsync(viewer);
 
         return Ok(leaveRequests);
     }
@@ -31,7 +38,13 @@ public class LeaveRequestsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetLeaveRequest(int id)
     {
-        var leaveRequest = await _leaveRequestService.GetLeaveRequestByIdAsync(id);
+        var viewer = CurrentViewer();
+        if (viewer is null)
+        {
+            return Unauthorized();
+        }
+
+        var leaveRequest = await _leaveRequestService.GetLeaveRequestByIdAsync(id, viewer);
 
         if (leaveRequest is null)
         {
@@ -46,7 +59,13 @@ public class LeaveRequestsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateLeaveRequest(CreateLeaveRequestDto dto)
     {
-        var result = await _leaveRequestService.CreateLeaveRequestAsync(dto);
+        var viewer = CurrentViewer();
+        if (viewer is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await _leaveRequestService.CreateLeaveRequestAsync(dto, viewer);
 
         if (result.Status == ResultStatus.Invalid)
         {
@@ -92,5 +111,12 @@ public class LeaveRequestsController : ControllerBase
         }
 
         return NoContent();
+    }
+
+    private LeaveViewer? CurrentViewer()
+    {
+        var userId = User.GetUserId();
+
+        return userId is null ? null : new LeaveViewer(userId.Value, User.CanViewAllStaff());
     }
 }

@@ -1,4 +1,5 @@
 using EmployeeHub.Api.DTOs;
+using EmployeeHub.Api.Extensions;
 using EmployeeHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,7 +23,7 @@ public class DashboardController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetStats()
     {
-        var stats = await _dashboardService.GetStatsAsync();
+        var stats = await _dashboardService.GetStatsAsync(User.CanViewAllStaff());
 
         return Ok(stats);
     }

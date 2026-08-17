@@ -1,6 +1,104 @@
-@EmployeeHub.Api_HostAddress = http://localhost:5023
+@host = http://localhost:5023
 
-GET {{EmployeeHub.Api_HostAddress}}/weatherforecast/
+### Health check (anonymous)
+GET {{host}}/api/health
 Accept: application/json
+
+### Sign in as the seeded admin
+# @name login
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@employeehub.local",
+  "password": "Admin123!"
+}
+
+### Capture the token from the login response for the requests below
+@token = {{login.response.body.token}}
+
+### Current user
+GET {{host}}/api/auth/me
+Authorization: Bearer {{token}}
+
+###
+# --------------------------------------------------------------------------
+# Account lifecycle
+#
+# These have no UI yet. The dev IEmailSender writes messages to the API console,
+# so the verification and reset links below are copied out of the backend log.
+# --------------------------------------------------------------------------
+
+### Register — creates an unverified account and returns no token on purpose
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "new.starter@employeehub.local",
+  "password": "Str0ngPassword!"
+}
+
+### Signing in before verifying is rejected
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "new.starter@employeehub.local",
+  "password": "Str0ngPassword!"
+}
+
+### Verify — paste the token from the verification link in the API console
+POST {{host}}/api/auth/verify-email
+Content-Type: application/json
+
+{
+  "token": "PASTE_VERIFICATION_TOKEN_HERE"
+}
+
+### Forgot password — always 200, even for an unknown address
+POST {{host}}/api/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "new.starter@employeehub.local"
+}
+
+### Reset — paste the token from the reset link in the API console (valid for 1 hour)
+POST {{host}}/api/auth/reset-password
+Content-Type: application/json
+
+{
+  "token": "PASTE_RESET_TOKEN_HERE",
+  "newPassword": "AnotherStr0ngPassword!"
+}
+
+###
+# --------------------------------------------------------------------------
+# Data endpoints
+# --------------------------------------------------------------------------
+
+### Dashboard stats (trimmed for non-managers)
+GET {{host}}/api/dashboard/stats
+Authorization: Bearer {{token}}
+
+### Employee directory (Manager or Admin only — 403 for an Employee token)
+GET {{host}}/api/employees
+Authorization: Bearer {{token}}
+
+### Departments (readable by any signed-in user)
+GET {{host}}/api/departments
+Authorization: Bearer {{token}}
+
+### Positions
+GET {{host}}/api/positions
+Authorization: Bearer {{token}}
+
+### Leave requests — all of them for a manager, own records only otherwise
+GET {{host}}/api/leave-requests
+Authorization: Bearer {{token}}
+
+### User accounts (Admin only)
+GET {{host}}/api/users
+Authorization: Bearer {{token}}
 
 ###

@@ -80,6 +80,17 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-await DbSeeder.SeedAsync(app.Services);
+// The integration tests swap in SQLite and build their own schema and fixtures, so the
+// SQL Server migrate-and-seed step does not apply to them.
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    await DbSeeder.SeedAsync(app.Services);
+}
 
 app.Run();
+
+/// <summary>
+/// Exposed so the test project's <c>WebApplicationFactory&lt;Program&gt;</c> can boot the real
+/// pipeline — attributes, policies and all — rather than testing services in isolation.
+/// </summary>
+public partial class Program;

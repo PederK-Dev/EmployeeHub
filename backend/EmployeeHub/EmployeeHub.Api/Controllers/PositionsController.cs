@@ -42,8 +42,10 @@ public class PositionsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "ManagerOrAdmin")]
     [ProducesResponseType(typeof(PositionDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CreatePosition(CreatePositionDto dto)
     {
         var position = await _positionService.CreatePositionAsync(dto);
@@ -55,8 +57,10 @@ public class PositionsController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = "ManagerOrAdmin")]
     [ProducesResponseType(typeof(PositionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdatePosition(int id, UpdatePositionDto dto)
     {
@@ -71,7 +75,9 @@ public class PositionsController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = "ManagerOrAdmin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> DeletePosition(int id)

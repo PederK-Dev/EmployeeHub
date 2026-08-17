@@ -42,8 +42,10 @@ public class DepartmentsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "ManagerOrAdmin")]
     [ProducesResponseType(typeof(DepartmentDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CreateDepartment(CreateDepartmentDto dto)
     {
         var department = await _departmentService.CreateDepartmentAsync(dto);
@@ -55,8 +57,10 @@ public class DepartmentsController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = "ManagerOrAdmin")]
     [ProducesResponseType(typeof(DepartmentDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateDepartment(int id, UpdateDepartmentDto dto)
     {
@@ -71,7 +75,9 @@ public class DepartmentsController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = "ManagerOrAdmin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> DeleteDepartment(int id)

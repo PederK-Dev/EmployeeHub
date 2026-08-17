@@ -6,7 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace EmployeeHub.Api.Controllers;
 
 [ApiController]
-[Authorize]
+// The directory holds personal data (names, emails, hire dates), so it is manager-and-up only.
+// Rank-and-file accounts — including anyone who self-registered — get no access to it.
+[Authorize(Policy = "ManagerOrAdmin")]
 [Route("api/employees")]
 public class EmployeesController : ControllerBase
 {

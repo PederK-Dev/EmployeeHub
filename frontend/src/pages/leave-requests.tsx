@@ -58,11 +58,16 @@ export const LeaveRequests = () => {
 
     useEffect(() => {
         load();
+
+        // The directory is manager-and-up only. Everyone else can just file for themselves,
+        // so there is no picker to populate.
+        if (!canManage) return;
+
         employeesApi
             .list()
             .then(setEmployees)
             .catch(() => setError("Failed to load employees."));
-    }, []);
+    }, [canManage]);
 
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();
@@ -75,7 +80,8 @@ export const LeaveRequests = () => {
     const setField = (key: keyof FormState, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
 
     const openCreate = () => {
-        setForm({ ...emptyForm, employeeId: employees[0] ? String(employees[0].id) : "" });
+        const defaultEmployeeId = canManage ? (employees[0] ? String(employees[0].id) : "") : String(user?.employeeId ?? "");
+        setForm({ ...emptyForm, employeeId: defaultEmployeeId });
         setFormError(null);
         setIsFormOpen(true);
     };
@@ -193,7 +199,7 @@ export const LeaveRequests = () => {
                 title="Leave requests"
                 subtitle="Review and manage time-off requests."
                 action={
-                    <Button iconLeading={Plus} onClick={openCreate} isDisabled={employees.length === 0}>
+                    <Button iconLeading={Plus} onClick={openCreate} isDisabled={canManage ? employees.length === 0 : !user?.employeeId}>
                         New request
                     </Button>
                 }
@@ -202,7 +208,7 @@ export const LeaveRequests = () => {
             {error && <ErrorBanner message={error} />}
 
             <DataTable
-                title="All requests"
+                title={canManage ? "All requests" : "My requests"}
                 columns={columns}
                 rows={filtered}
                 getKey={(r) => r.id}
@@ -214,12 +220,14 @@ export const LeaveRequests = () => {
             <ModalShell isOpen={isFormOpen} onOpenChange={setIsFormOpen} title="New leave request">
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     {formError && <ErrorBanner message={formError} />}
-                    <NativeSelect
-                        label="Employee"
-                        options={employeeOptions}
-                        value={form.employeeId}
-                        onChange={(e) => setField("employeeId", e.target.value)}
-                    />
+                    {canManage && (
+                        <NativeSelect
+                            label="Employee"
+                            options={employeeOptions}
+                            value={form.employeeId}
+                            onChange={(e) => setField("employeeId", e.target.value)}
+                        />
+                    )}
                     <NativeSelect
                         label="Type"
                         options={typeOptions}

@@ -8,6 +8,12 @@ namespace EmployeeHub.Api.Services;
 
 public class AuthService
 {
+    /// <summary>
+    /// A valid hash of a password nobody holds, used to spend the same time verifying a login for
+    /// an unknown email as for a real one. Built once per process on first use.
+    /// </summary>
+    private static string? _dummyHash;
+
     private readonly EmployeeHubDbContext _context;
     private readonly IPasswordHasher<User> _passwordHasher;
     private readonly TokenService _tokenService;
@@ -28,28 +34,44 @@ public class AuthService
         _configuration = configuration;
     }
 
-    public async Task<AuthResponseDto?> LoginAsync(LoginDto dto)
+    public async Task<LoginResult> LoginAsync(LoginDto dto)
     {
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+
+        // Verify against a throwaway hash when the email is unknown, so that a failed login costs
+        // the same either way. Returning early here would leak which emails are registered.
         if (user is null)
         {
-            return null;
+            _passwordHasher.VerifyHashedPassword(new User(), DummyHash, dto.Password);
+            return LoginResult.Failed();
         }
 
         var verification = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password);
         if (verification == PasswordVerificationResult.Failed)
         {
-            return null;
+            return LoginResult.Failed();
         }
 
-        return BuildAuthResponse(user);
+        // Self-registered accounts stay inert until the address is confirmed, so registering
+        // alone is not enough to obtain a token.
+        if (!user.EmailVerified)
+        {
+            return LoginResult.Unverified();
+        }
+
+        return LoginResult.Success(BuildAuthResponse(user));
     }
 
-    public async Task<ServiceResult<AuthResponseDto>> RegisterAsync(RegisterDto dto)
+    /// <summary>
+    /// Creates an unverified <see cref="UserRole.Employee"/> account and emails a confirmation
+    /// link. Deliberately returns no token — the account cannot sign in until it is verified,
+    /// and an admin still has to link it to an employee record before it can do much.
+    /// </summary>
+    public async Task<ServiceResult<bool>> RegisterAsync(RegisterDto dto)
     {
         if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
         {
-            return ServiceResult<AuthResponseDto>.Invalid($"A user with email '{dto.Email}' already exists.");
+            return ServiceResult<bool>.Invalid($"A user with email '{dto.Email}' already exists.");
         }
 
         var user = new User
@@ -66,7 +88,7 @@ public class AuthService
 
         await SendVerificationEmailAsync(user);
 
-        return ServiceResult<AuthResponseDto>.Ok(BuildAuthResponse(user));
+        return ServiceResult<bool>.Ok(true);
     }
 
     /// <summary>
@@ -130,6 +152,9 @@ public class AuthService
         return user is null ? null : ToDto(user);
     }
 
+    private string DummyHash =>
+        _dummyHash ??= _passwordHasher.HashPassword(new User(), "not-a-real-password");
+
     private AuthResponseDto BuildAuthResponse(User user)
     {
         var (token, expiresAt) = _tokenService.CreateToken(user);
@@ -168,4 +193,25 @@ public class AuthService
             EmployeeId = user.EmployeeId
         };
     }
+}
+
+public enum LoginStatus
+{
+    Success,
+
+    /// <summary>Unknown email or wrong password — deliberately not distinguished.</summary>
+    InvalidCredentials,
+
+    /// <summary>Correct credentials, but the email address has not been confirmed yet.</summary>
+    EmailNotVerified
+}
+
+/// <summary>Outcome of a sign-in attempt.</summary>
+public record LoginResult(LoginStatus Status, AuthResponseDto? Value = null)
+{
+    public static LoginResult Success(AuthResponseDto value) => new(LoginStatus.Success, value);
+
+    public static LoginResult Failed() => new(LoginStatus.InvalidCredentials);
+
+    public static LoginResult Unverified() => new(LoginStatus.EmailNotVerified);
 }
